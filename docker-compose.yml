@@ -1,41 +1,27 @@
-version: '3'
+version: '3.1'
 
 services:
   otrs:
     image: juanluisbaptiste/otrs:latest
-    ports:
-      - '80:80'
-    # If running behind a proxy container, expose the ports instead
-    # and link the proxy container to this one.
-    #  expose:
-    #  - "80"
-    depends_on:
-      - mariadb
-      # Uncomment if using the smtp relay
-      # - postfix
+    container_name: znuny_otrs
     env_file: .env
+    secrets:
+      - otrs_secrets
     volumes:
-      - './volumes/config:/opt/otrs/Kernel'
-      # Uncomment if using OTRS_ARTICLE_STORAGE_TYPE=ArticleStorageFS
-      #- ./volumes/article:/opt/otrs/var/article
+      - ./volumes/config:/opt/otrs/Kernel
       - ./volumes/skins:/opt/otrs/var/httpd/htdocs/skins/
       - ./backups:/var/otrs/backups
       - ./volumes/addons:/opt/otrs/addons
       - ./volumes/db_upgrade:/opt/otrs/db_upgrade
       - /etc/localtime:/etc/localtime:ro
-  mariadb:
-    image: juanluisbaptiste/otrs-mariadb:latest
-    expose:
-      - "3306"
-    env_file: .env
-    volumes:
-      - ./volumes/mysql:/var/lib/mysql
-      - /etc/localtime:/etc/localtime:ro
-# If you need a SMTP relay you can use this service
-  # postfix:
-  #   image: juanluisbaptiste/postfix:latest
-  #   expose:
-  #     - '25'
-  #   # See juanluisbaptiste/postfix github page for the contents
-  #   # and an explanation of credentials-smtp.
-  #   env_file: .env
+    networks:
+      - nmqnet
+    restart: unless-stopped
+
+secrets:
+  otrs_secrets:
+    file: ./secrets/otrs_secrets
+
+networks:
+  nmqnet:
+    external: true
